@@ -1,4 +1,4 @@
-﻿using Microsoft.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -22,7 +22,6 @@ namespace epood
         private byte[]? imageData;
         private Form? popupForm;
 
-        // 🔧 Исправлено: объявлены корректные диалоги
         private OpenFileDialog? openFileDialog;
         private SaveFileDialog? saveFileDialog;
 
@@ -82,16 +81,8 @@ namespace epood
                 adapter_toode = new SqlDataAdapter(sql, _connect);
                 adapter_toode.Fill(dt_toode);
 
-                DataGridView.Columns.Clear();
-                DataGridView.DataSource = dt_toode;
-
-                HashSet<string> keys = new HashSet<string>();
-                foreach (DataRow row in dt_toode.Rows)
-                {
-                    string kat_n = row["Kategooria_nimetus"]?.ToString() ?? string.Empty;
-                    if (!keys.Contains(kat_n))
-                        keys.Add(kat_n);
-                }
+                DataGridView1.Columns.Clear();
+                DataGridView1.DataSource = dt_toode;
             }
             catch
             {
@@ -181,7 +172,7 @@ namespace epood
                 if (saveFileDialog.ShowDialog() == DialogResult.OK)
                 {
                     File.Copy(openFileDialog.FileName, saveFileDialog.FileName, true);
-                    PictureBox.Image = Image.FromFile(saveFileDialog.FileName);
+                    PictureBox1.Image = System.Drawing.Image.FromFile(saveFileDialog.FileName);
                 }
             }
         }
@@ -240,7 +231,53 @@ namespace epood
             }
         }
 
-        private void Loopilt(Image image, int r)
+        private void Must_btn_Click(object sender, EventArgs e)
+        {
+            if (DataGridView1.SelectedRows.Count == 0) return;
+            Id = Convert.ToInt32(DataGridView1.SelectedRows[0].Cells["Id"].Value);
+            if (Id != 0)
+            {
+                _command = new SqlCommand("DELETE FROM Toodetabel WHERE Id=@id", _connect);
+                _connect.Open();
+                _command.Parameters.AddWithValue("@id", Id);
+                _command.ExecuteNonQuery();
+                _connect.Close();
+
+                NaitaAndmed();
+                MessageBox.Show("Andmed tabelist Tooded on kustutatud");
+            }
+            else
+            {
+                MessageBox.Show("Viga Tooded tabelist ...");
+            }
+        }
+
+        private void Uuenda_btn_Click(object sender, EventArgs e)
+        {
+            if (ToodeBox.Text != "" && KogusBox.Text != "" && HindBox.Text != "" && PictureBox1.Image != null)
+            {
+                _command = new SqlCommand("UPDATE Toodetabel SET Toodenimetus=@toode, Kogus=@kogus, Hind=@hind, Pilt=@pilt WHERE Id=@id", _connect);
+                _connect.Open();
+                _command.Parameters.AddWithValue("@id", Id);
+                _command.Parameters.AddWithValue("@toode", ToodeBox.Text);
+                _command.Parameters.AddWithValue("@kogus", KogusBox.Text);
+                _command.Parameters.AddWithValue("@hind", HindBox.Text.Replace(",", "."));
+
+                string file_pilt = ToodeBox.Text + (extension ?? ".jpg");
+                _command.Parameters.AddWithValue("@pilt", file_pilt);
+
+                _command.ExecuteNonQuery();
+                _connect.Close();
+                NaitaAndmed();
+                MessageBox.Show("Andmed uuendatud");
+            }
+            else
+            {
+                MessageBox.Show("Viga");
+            }
+        }
+
+        private void Loopilt(System.Drawing.Image image, int r)
         {
             popupForm = new Form
             {
@@ -258,12 +295,43 @@ namespace epood
 
             popupForm.Controls.Add(pictureBox);
 
-            if (DataGridView != null && r >= 0 && r < DataGridView.Rows.Count)
+            if (DataGridView1 != null && r >= 0 && r < DataGridView1.Rows.Count)
             {
-                Rectangle cellRectangle = DataGridView.GetCellDisplayRectangle(4, r, true);
-                Point popupLocation = DataGridView.PointToScreen(cellRectangle.Location);
+                Rectangle cellRectangle = DataGridView1.GetCellDisplayRectangle(4, r, true);
+                Point popupLocation = DataGridView1.PointToScreen(cellRectangle.Location);
                 popupForm.Location = new Point(popupLocation.X + cellRectangle.Width, popupLocation.Y);
                 popupForm.Show();
+            }
+        }
+        private void Pood_btn_Click(object sender, EventArgs e)
+        {
+            Size = new Size(1350, 600);
+            kategooriad = new TabControl(); //loome kaardid
+            kategooriad.Name = "Kategooriad";
+            Kategooriad.Width = 450;
+            Kategooriad.Height = Height;
+            Kategooriadf.Location = new System.Drawing.Point(900, 0);
+            connect.Open();
+            adapter_kategooria = new SqlDataAdapter("SELECT Id, Kategooria_nimetus FROM Kategooriatabel", connect);
+            DataTable dt_kat = new DataTable();
+            adapter_kategooria.Fill(dt_kat);
+            ImageList iconList = new ImageList();
+            iconList.ColorDepth = ColorDepth.Depth32Bit;
+            iconList.ImageSize = new Size(25,25);
+            int 1 = 0;
+            foreach (DataRow nimetus in dt_kat.Rows)
+            {
+                Kategooriad.TabPages.Add((string)nimetus["Kategooria_nimetus"]);
+                Kategooriad.TabPages[i].ImageIndex = int;
+                i++;
+                kat_Id = (int)nimetus["Id"];
+                fail_list = Failid_KatId(kat_id);
+                int r = 0;
+                int c = 0;
+                foreach (var fail in fail_list)
+                {
+
+                }
             }
         }
     }
